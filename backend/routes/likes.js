@@ -27,7 +27,10 @@ router.post('/', (req, res) => {
   const alreadyLiked = store.likes.find((l) => l.link === link);
   if (alreadyLiked) return res.json({ ok: true, message: 'Already liked' });
 
-  store.likes.push({ link, name, image, price, tags: tags || [], source, likedAt: new Date().toISOString() });
+  const earring = { link, name, image, price, tags: tags || [], source };
+  store.likes.push({ ...earring, likedAt: new Date().toISOString() });
+  store.lastAction = { type: 'like', earring };
+
   res.json({ ok: true });
 });
 

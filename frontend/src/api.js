@@ -44,6 +44,12 @@ export async function getLikes() {
   return res.json();
 }
 
+export async function undoLastSwipe() {
+  const res = await fetch(`${BASE}/earrings/undo`, { method: 'POST' });
+  if (!res.ok) throw new Error('Nothing to undo');
+  return res.json(); // { ok, earring }
+}
+
 export async function unlikeEarring(link) {
   const res = await fetch(`${BASE}/likes`, {
     method: 'DELETE',

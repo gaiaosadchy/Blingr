@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import SwipeCard from './components/SwipeCard';
 import LikesTab from './components/LikesTab';
-import { getNextEarring, skipEarring, likeEarring, getLikes, getStatus } from './api';
+import { getNextEarring, skipEarring, likeEarring, getLikes, getStatus, undoLastSwipe } from './api';
 
 export default function App() {
   // Inject @keyframes once on mount
@@ -20,6 +20,7 @@ export default function App() {
   const [scraped, setScraped] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState(null);
+  const [canUndo, setCanUndo] = useState(false);
 
   // Poll until backend finishes scraping
   useEffect(() => {
@@ -75,6 +76,7 @@ export default function App() {
     try {
       await likeEarring(earring);
       setLikes((prev) => [...prev, { ...earring, likedAt: new Date().toISOString() }]);
+      setCanUndo(true);
     } catch (err) {
       console.error('Like failed:', err.message);
     }
@@ -84,10 +86,26 @@ export default function App() {
   async function handleSkip(earring) {
     try {
       await skipEarring(earring.link);
+      setCanUndo(true);
     } catch (err) {
       console.error('Skip failed:', err.message);
     }
     loadNext();
+  }
+
+  async function handleUndo() {
+    try {
+      const data = await undoLastSwipe();
+      setCanUndo(false);
+      // Put the undone earring back as the current card
+      setCurrent(data.earring);
+      setDone(false);
+      setLoading(false);
+      // If it was a like, remove it from the local likes list too
+      setLikes((prev) => prev.filter((l) => l.link !== data.earring.link));
+    } catch (err) {
+      console.error('Undo failed:', err.message);
+    }
   }
 
   function handleUnlike(link) {
@@ -129,6 +147,8 @@ export default function App() {
             remaining={remaining}
             onLike={handleLike}
             onSkip={handleSkip}
+            onUndo={handleUndo}
+            canUndo={canUndo}
           />
         ) : (
           <LikesTab likes={likes} onUnlike={handleUnlike} />
@@ -138,7 +158,7 @@ export default function App() {
   );
 }
 
-function DiscoverView({ scraped, loading, done, error, current, remaining, onLike, onSkip }) {
+function DiscoverView({ scraped, loading, done, error, current, remaining, onLike, onSkip, onUndo, canUndo }) {
   if (!scraped) {
     return (
       <div style={centerStyle}>
@@ -182,6 +202,8 @@ function DiscoverView({ scraped, loading, done, error, current, remaining, onLik
       remaining={remaining}
       onLike={onLike}
       onSkip={onSkip}
+      onUndo={onUndo}
+      canUndo={canUndo}
     />
   );
 }

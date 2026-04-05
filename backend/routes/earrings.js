@@ -82,8 +82,28 @@ router.get('/next', (req, res) => {
 router.post('/skip', (req, res) => {
   const { link } = req.body;
   if (!link) return res.status(400).json({ error: 'link is required' });
+
+  const earring = store.earrings.find((e) => e.link === link);
   store.skipped.add(link);
+  store.lastAction = { type: 'skip', earring };
+
   res.json({ ok: true });
+});
+
+// POST /api/earrings/undo — undo the last swipe
+router.post('/undo', (req, res) => {
+  const last = store.lastAction;
+  if (!last) return res.status(404).json({ error: 'Nothing to undo' });
+
+  if (last.type === 'skip') {
+    store.skipped.delete(last.earring.link);
+  } else if (last.type === 'like') {
+    store.likes = store.likes.filter((l) => l.link !== last.earring.link);
+  }
+
+  const earring = last.earring;
+  store.lastAction = null;
+  res.json({ ok: true, earring });
 });
 
 module.exports = { router, init };

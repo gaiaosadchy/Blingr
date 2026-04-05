@@ -6,7 +6,7 @@ import EarringCard from './EarringCard';
  * Supports both mouse/touch drag AND button clicks.
  * onLike / onSkip are called when a decision is made.
  */
-export default function SwipeCard({ earring, onLike, onSkip, remaining }) {
+export default function SwipeCard({ earring, onLike, onSkip, onUndo, canUndo, remaining }) {
   const [drag, setDrag] = useState({ x: 0, y: 0, dragging: false });
   const [decision, setDecision] = useState(null); // 'like' | 'skip' | null
   const startRef = useRef(null);
@@ -115,6 +115,14 @@ export default function SwipeCard({ earring, onLike, onSkip, remaining }) {
         <button style={{ ...btnStyle, ...likeBtnStyle }} onClick={() => triggerDecision('like')}>
           ♥
         </button>
+        <button
+          style={{ ...btnStyle, ...undoBtnStyle, opacity: canUndo ? 1 : 0.3 }}
+          onClick={onUndo}
+          disabled={!canUndo}
+          title="Undo last swipe"
+        >
+          ↩
+        </button>
         <button style={{ ...btnStyle, ...skipBtnStyle }} onClick={() => triggerDecision('skip')}>
           ✕
         </button>
@@ -185,8 +193,9 @@ const shopLinkStyle = {
 
 const btnRowStyle = {
   display: 'flex',
-  gap: 48,
+  gap: 24,
   justifyContent: 'center',
+  alignItems: 'center',
 };
 
 const btnStyle = {
@@ -199,6 +208,14 @@ const btnStyle = {
   fontWeight: 700,
   boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
   transition: 'transform 0.1s',
+};
+
+const undoBtnStyle = {
+  background: '#fff',
+  color: '#888',
+  width: 48,
+  height: 48,
+  fontSize: 20,
 };
 
 const skipBtnStyle = {

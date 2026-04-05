@@ -10,10 +10,11 @@ const PORT = process.env.PORT || 3001;
 
 // ── Shared in-memory store ────────────────────────────────────────────────────
 const store = {
-  earrings: [],   // all scraped earrings
-  likes: [],      // earrings the user liked
-  skipped: new Set(), // links of skipped earrings
-  scraped: false, // true once scraping is done
+  earrings: [],        // all scraped earrings
+  likes: [],           // earrings the user liked
+  skipped: new Set(),  // links of skipped earrings
+  scraped: false,      // true once scraping is done
+  lastAction: null,    // { type: 'like'|'skip', earring } — for undo
 };
 
 // ── Middleware ────────────────────────────────────────────────────────────────
