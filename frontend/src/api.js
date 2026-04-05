@@ -44,6 +44,13 @@ export async function getLikes() {
   return res.json();
 }
 
+export async function fetchPrice(link) {
+  const res = await fetch(`${BASE}/price?link=${encodeURIComponent(link)}`);
+  if (!res.ok) return '';
+  const data = await res.json();
+  return data.price || '';
+}
+
 export async function undoLastSwipe() {
   const res = await fetch(`${BASE}/earrings/undo`, { method: 'POST' });
   if (!res.ok) throw new Error('Nothing to undo');

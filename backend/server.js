@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const cheerio = require('cheerio');
 const { scrapeAll } = require('./scrapers/index');
 const earringsRoute = require('./routes/earrings');
 const likesRoute = require('./routes/likes');
@@ -17,6 +18,8 @@ const store = {
   lastAction: null,    // { type: 'like'|'skip', earring } — for undo
 };
 
+const priceCache = new Map(); // link → price string
+
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
@@ -30,6 +33,32 @@ app.use('/api/likes', likesRoute.router);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+// Price — fetches from product page JSON-LD, cached in memory
+app.get('/api/price', async (req, res) => {
+  const { link } = req.query;
+  if (!link) return res.status(400).json({ error: 'link required' });
+
+  if (priceCache.has(link)) return res.json({ price: priceCache.get(link) });
+
+  try {
+    const r = await axios.get(link, {
+      timeout: 15000,
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120' },
+    });
+    const $ = cheerio.load(r.data);
+    let price = '';
+    $('script[type="application/ld+json"]').each((_, el) => {
+      if (price) return;
+      const match = $(el).html().match(/"price"\s*:\s*"?([0-9.]+)"?/);
+      if (match) price = '₪' + match[1];
+    });
+    priceCache.set(link, price);
+    res.json({ price });
+  } catch {
+    res.json({ price: '' });
+  }
+});
 
 // Image proxy — bypasses hotlink protection by fetching server-side (no browser Referer)
 app.get('/api/image', async (req, res) => {

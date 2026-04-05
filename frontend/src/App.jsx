@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import SwipeCard from './components/SwipeCard';
 import LikesTab from './components/LikesTab';
-import { getNextEarring, skipEarring, likeEarring, getLikes, getStatus, undoLastSwipe } from './api';
+import { getNextEarring, skipEarring, likeEarring, getLikes, getStatus, undoLastSwipe, fetchPrice } from './api';
 
 export default function App() {
   // Inject @keyframes once on mount
@@ -14,7 +14,7 @@ export default function App() {
 
   const [tab, setTab] = useState('discover'); // 'discover' | 'likes'
   const [current, setCurrent] = useState(null); // earring being shown
-  const [remaining, setRemaining] = useState(0);
+  const [price, setPrice] = useState('');       // lazily fetched price for current earring
   const [likes, setLikes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scraped, setScraped] = useState(false);
@@ -53,7 +53,6 @@ export default function App() {
         setCurrent(null);
       } else {
         setCurrent(data.earring);
-        setRemaining(data.remaining);
         setDone(false);
       }
     } catch (err) {
@@ -62,6 +61,15 @@ export default function App() {
       setLoading(false);
     }
   }, []);
+
+  // Fetch price lazily whenever the shown earring changes
+  useEffect(() => {
+    if (!current?.link) return;
+    setPrice('');
+    let cancelled = false;
+    fetchPrice(current.link).then((p) => { if (!cancelled) setPrice(p); });
+    return () => { cancelled = true; };
+  }, [current?.link]);
 
   async function loadLikes() {
     try {
@@ -144,7 +152,7 @@ export default function App() {
             done={done}
             error={error}
             current={current}
-            remaining={remaining}
+            price={price}
             onLike={handleLike}
             onSkip={handleSkip}
             onUndo={handleUndo}
@@ -158,7 +166,7 @@ export default function App() {
   );
 }
 
-function DiscoverView({ scraped, loading, done, error, current, remaining, onLike, onSkip, onUndo, canUndo }) {
+function DiscoverView({ scraped, loading, done, error, current, price, onLike, onSkip, onUndo, canUndo }) {
   if (!scraped) {
     return (
       <div style={centerStyle}>
@@ -199,7 +207,7 @@ function DiscoverView({ scraped, loading, done, error, current, remaining, onLik
   return (
     <SwipeCard
       earring={current}
-      remaining={remaining}
+      price={price}
       onLike={onLike}
       onSkip={onSkip}
       onUndo={onUndo}
@@ -211,10 +219,11 @@ function DiscoverView({ scraped, loading, done, error, current, remaining, onLik
 // ── Styles ──────────────────────────────────────────────────────────────────────
 
 const appStyle = {
-  minHeight: '100vh',
+  height: '100dvh',     // fills exact visible viewport (handles iOS Safari toolbar)
   display: 'flex',
   flexDirection: 'column',
   background: '#f5f0eb',
+  overflow: 'hidden',
 };
 
 const headerStyle = {
@@ -272,12 +281,12 @@ const badgeStyle = {
 
 const mainStyle = {
   flex: 1,
+  minHeight: 0,         // lets flex child shrink below content size
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  justifyContent: 'center',
-  paddingTop: 32,
-  paddingBottom: 32,
+  overflow: 'hidden',
+  width: '100%',
 };
 
 const centerStyle = {

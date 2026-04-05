@@ -2,15 +2,12 @@ import { useState, useRef } from 'react';
 import EarringCard from './EarringCard';
 
 /**
- * Swipeable card.
- * Supports both mouse/touch drag AND button clicks.
- * onLike / onSkip are called when a decision is made.
+ * Swipeable card — fills all available vertical space so buttons are
+ * always visible without scrolling on mobile.
  */
-export default function SwipeCard({ earring, onLike, onSkip, onUndo, canUndo, remaining }) {
+export default function SwipeCard({ earring, price, onLike, onSkip, onUndo, canUndo }) {
   const [drag, setDrag] = useState({ x: 0, y: 0, dragging: false });
-  const [decision, setDecision] = useState(null); // 'like' | 'skip' | null
   const startRef = useRef(null);
-  const cardRef = useRef(null);
 
   // ── Drag / touch helpers ───────────────────────────────────────────────────
 
@@ -32,24 +29,17 @@ export default function SwipeCard({ earring, onLike, onSkip, onUndo, canUndo, re
 
   function handleDragEnd() {
     if (!drag.dragging) return;
-    const threshold = 100;
-    if (drag.x > threshold) {
-      triggerDecision('like');
-    } else if (drag.x < -threshold) {
-      triggerDecision('skip');
-    } else {
-      setDrag({ x: 0, y: 0, dragging: false });
-    }
+    if (drag.x > 100) triggerDecision('like');
+    else if (drag.x < -100) triggerDecision('skip');
+    else setDrag({ x: 0, y: 0, dragging: false });
   }
 
   // ── Decision animation ─────────────────────────────────────────────────────
 
   function triggerDecision(type) {
-    setDecision(type);
     const flyX = type === 'like' ? 600 : -600;
     setDrag({ x: flyX, y: 0, dragging: false });
     setTimeout(() => {
-      setDecision(null);
       setDrag({ x: 0, y: 0, dragging: false });
       if (type === 'like') onLike(earring);
       else onSkip(earring);
@@ -58,7 +48,7 @@ export default function SwipeCard({ earring, onLike, onSkip, onUndo, canUndo, re
 
   // ── Derived styles ─────────────────────────────────────────────────────────
 
-  const rotate = drag.x / 20; // degrees
+  const rotate = drag.x / 20;
   const likeOpacity = Math.min(1, Math.max(0, drag.x / 100));
   const skipOpacity = Math.min(1, Math.max(0, -drag.x / 100));
 
@@ -72,13 +62,8 @@ export default function SwipeCard({ earring, onLike, onSkip, onUndo, canUndo, re
 
   return (
     <div style={wrapStyle}>
-      {/* Remaining count */}
-      <p style={remainingStyle}>{remaining} earrings left</p>
-
-      {/* Card */}
-      <div
-        ref={cardRef}
-        style={{ ...stackStyle, ...cardTransform }}
+      {/* Card — fills all space above the buttons */}
+      <div style={{ ...cardWrapStyle, ...cardTransform }}
         onMouseDown={handleDragStart}
         onMouseMove={handleDragMove}
         onMouseUp={handleDragEnd}
@@ -88,16 +73,11 @@ export default function SwipeCard({ earring, onLike, onSkip, onUndo, canUndo, re
         onTouchEnd={handleDragEnd}
       >
         {/* LIKE stamp */}
-        <div style={{ ...stampStyle, ...likeStampStyle, opacity: likeOpacity }}>
-          LIKE ♥
-        </div>
+        <div style={{ ...stampStyle, ...likeStampStyle, opacity: likeOpacity }}>LIKE ♥</div>
         {/* SKIP stamp */}
-        <div style={{ ...stampStyle, ...skipStampStyle, opacity: skipOpacity }}>
-          SKIP ✕
-        </div>
+        <div style={{ ...stampStyle, ...skipStampStyle, opacity: skipOpacity }}>SKIP ✕</div>
 
-        <EarringCard earring={earring}>
-          {/* "Open in shop" link */}
+        <EarringCard earring={earring} price={price}>
           <a
             href={earring.link}
             target="_blank"
@@ -110,47 +90,41 @@ export default function SwipeCard({ earring, onLike, onSkip, onUndo, canUndo, re
         </EarringCard>
       </div>
 
-      {/* Buttons — like first so it appears on the right in RTL layout */}
+      {/* Buttons — always at the bottom, never hidden */}
       <div style={btnRowStyle}>
-        <button style={{ ...btnStyle, ...likeBtnStyle }} onClick={() => triggerDecision('like')}>
-          ♥
-        </button>
+        <button style={{ ...btnStyle, ...likeBtnStyle }} onClick={() => triggerDecision('like')}>♥</button>
         <button
           style={{ ...btnStyle, ...undoBtnStyle, opacity: canUndo ? 1 : 0.3 }}
           onClick={onUndo}
           disabled={!canUndo}
           title="Undo last swipe"
-        >
-          ↩
-        </button>
-        <button style={{ ...btnStyle, ...skipBtnStyle }} onClick={() => triggerDecision('skip')}>
-          ✕
-        </button>
+        >↩</button>
+        <button style={{ ...btnStyle, ...skipBtnStyle }} onClick={() => triggerDecision('skip')}>✕</button>
       </div>
     </div>
   );
 }
 
-// ── Styles ─────────────────────────────────────────────────────────────────────
+// ── Styles ──────────────────────────────────────────────────────────────────────
 
 const wrapStyle = {
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  gap: 24,
-  padding: '0 16px',
-};
-
-const remainingStyle = {
-  fontSize: 13,
-  color: '#999',
-  letterSpacing: 0.5,
-};
-
-const stackStyle = {
   width: '100%',
-  maxWidth: 380,
+  height: '100%',
+  padding: '8px 16px 0',
+  boxSizing: 'border-box',
+};
+
+const cardWrapStyle = {
+  flex: 1,
+  minHeight: 0,           // allows flex child to shrink below its content size
+  width: '100%',
+  maxWidth: 420,
   position: 'relative',
+  display: 'flex',
+  flexDirection: 'column',
 };
 
 const stampStyle = {
@@ -189,6 +163,7 @@ const shopLinkStyle = {
   textDecoration: 'none',
   fontWeight: 500,
   borderTop: '1px solid #f0e8e0',
+  flexShrink: 0,
 };
 
 const btnRowStyle = {
@@ -196,6 +171,8 @@ const btnRowStyle = {
   gap: 24,
   justifyContent: 'center',
   alignItems: 'center',
+  padding: '16px 0 20px',
+  flexShrink: 0,
 };
 
 const btnStyle = {
@@ -208,6 +185,7 @@ const btnStyle = {
   fontWeight: 700,
   boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
   transition: 'transform 0.1s',
+  WebkitTapHighlightColor: 'transparent',
 };
 
 const undoBtnStyle = {
@@ -218,12 +196,5 @@ const undoBtnStyle = {
   fontSize: 20,
 };
 
-const skipBtnStyle = {
-  background: '#fff',
-  color: '#e74c3c',
-};
-
-const likeBtnStyle = {
-  background: '#fff',
-  color: '#2ecc71',
-};
+const skipBtnStyle = { background: '#fff', color: '#e74c3c' };
+const likeBtnStyle = { background: '#fff', color: '#2ecc71' };
