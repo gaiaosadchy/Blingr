@@ -27,33 +27,44 @@ export default function LikesTab({ likes, onUnlike }) {
   }
 
   return (
-    <div style={gridStyle}>
-      {likes.map((earring) => (
-        <div key={earring.link} style={itemStyle}>
-          <EarringCard earring={earring}>
-            <div style={actionsStyle}>
-              <a
-                href={earring.link}
-                target="_blank"
-                rel="noreferrer"
-                style={buyLinkStyle}
-              >
-                View in shop →
-              </a>
-              <button
-                style={removeBtnStyle}
-                onClick={() => handleUnlike(earring.link)}
-                disabled={removing === earring.link}
-              >
-                {removing === earring.link ? '...' : '✕ Remove'}
-              </button>
-            </div>
-          </EarringCard>
-        </div>
-      ))}
+    /* scrollable wrapper — fills the main area and scrolls internally */
+    <div style={scrollWrapStyle}>
+      <div style={gridStyle}>
+        {likes.map((earring) => (
+          <div key={earring.link} style={itemStyle}>
+            <EarringCard earring={earring}>
+              <div style={actionsStyle}>
+                <a
+                  href={earring.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={buyLinkStyle}
+                >
+                  View in shop →
+                </a>
+                <button
+                  style={removeBtnStyle}
+                  onClick={() => handleUnlike(earring.link)}
+                  disabled={removing === earring.link}
+                >
+                  {removing === earring.link ? '...' : '✕'}
+                </button>
+              </div>
+            </EarringCard>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
+
+/* fills main, scrolls vertically — solves the mobile overflow problem */
+const scrollWrapStyle = {
+  width: '100%',
+  height: '100%',
+  overflowY: 'auto',
+  WebkitOverflowScrolling: 'touch', // iOS momentum scrolling
+};
 
 const emptyStyle = {
   display: 'flex',
@@ -63,19 +74,22 @@ const emptyStyle = {
   gap: 12,
   color: '#aaa',
   fontSize: 18,
-  paddingTop: 80,
+  height: '100%',
 };
 
 const gridStyle = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-  gap: 24,
-  padding: '24px 16px',
+  /* 2 columns on mobile, up to 3-4 on desktop */
+  gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+  gap: 16,
+  padding: 16,
   maxWidth: 1100,
   margin: '0 auto',
 };
 
+/* fixed height so the flex image inside EarringCard has a reference to fill */
 const itemStyle = {
+  height: 300,
   display: 'flex',
   flexDirection: 'column',
 };
@@ -83,24 +97,26 @@ const itemStyle = {
 const actionsStyle = {
   display: 'flex',
   borderTop: '1px solid #f0e8e0',
+  flexShrink: 0,
 };
 
 const buyLinkStyle = {
   flex: 1,
   textAlign: 'center',
-  padding: '10px 0',
+  padding: '8px 0',
   color: '#c07850',
-  fontSize: 14,
+  fontSize: 13,
   textDecoration: 'none',
   fontWeight: 500,
 };
 
 const removeBtnStyle = {
-  padding: '10px 14px',
+  padding: '8px 12px',
   background: 'none',
   border: 'none',
   color: '#e74c3c',
   fontSize: 13,
   cursor: 'pointer',
   borderLeft: '1px solid #f0e8e0',
+  flexShrink: 0,
 };

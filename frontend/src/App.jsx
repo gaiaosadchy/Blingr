@@ -144,7 +144,7 @@ export default function App() {
       </header>
 
       {/* Body */}
-      <main style={mainStyle}>
+      <main style={{ ...mainStyle, alignItems: tab === 'likes' ? 'stretch' : 'center' }}>
         {tab === 'discover' ? (
           <DiscoverView
             scraped={scraped}

@@ -1,9 +1,5 @@
-/**
- * Displays the earring image, name, price, and source shop.
- * Used both in the swipe stack and the likes grid.
- * Image fills all available vertical space (flex: 1) so the card
- * adapts to any screen size without a fixed pixel height.
- */
+import { useState } from 'react';
+import ZoomModal from './ZoomModal';
 
 function proxyUrl(url) {
   if (!url) return '';
@@ -11,6 +7,7 @@ function proxyUrl(url) {
 }
 
 export default function EarringCard({ earring, price, style, children }) {
+  const [zoomed, setZoomed] = useState(false);
   const displayPrice = price || earring.price;
 
   return (
@@ -19,8 +16,18 @@ export default function EarringCard({ earring, price, style, children }) {
         src={proxyUrl(earring.image)}
         alt={earring.name}
         style={imgStyle}
+        onClick={() => setZoomed(true)}
         onError={(e) => { e.target.style.display = 'none'; }}
       />
+
+      {zoomed && (
+        <ZoomModal
+          src={proxyUrl(earring.image)}
+          alt={earring.name}
+          onClose={() => setZoomed(false)}
+        />
+      )}
+
       <div style={infoStyle}>
         <p style={nameStyle}>{earring.name}</p>
         {displayPrice && <p style={priceStyle}>{displayPrice}</p>}
@@ -38,16 +45,17 @@ const cardStyle = {
   boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
   display: 'flex',
   flexDirection: 'column',
-  height: '100%',       // fill the cardWrap in SwipeCard
+  height: '100%',
 };
 
 const imgStyle = {
   width: '100%',
-  flex: 1,              // takes all space not used by info/link
-  minHeight: 0,         // allows shrinking on small screens
+  flex: 1,
+  minHeight: 0,
   objectFit: 'cover',
   objectPosition: 'center top',
   display: 'block',
+  cursor: 'zoom-in',
 };
 
 const infoStyle = {
