@@ -2,11 +2,16 @@
  * Displays the earring image, name, price, and source shop.
  * Used both in the swipe stack and the likes grid.
  */
+function proxyUrl(url) {
+  if (!url) return '';
+  return `/api/image?url=${encodeURIComponent(url)}`;
+}
+
 export default function EarringCard({ earring, style, children }) {
   return (
     <div style={{ ...cardStyle, ...style }}>
       <img
-        src={earring.image}
+        src={proxyUrl(earring.image)}
         alt={earring.name}
         style={imgStyle}
         onError={(e) => {
