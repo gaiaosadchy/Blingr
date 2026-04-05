@@ -100,7 +100,7 @@ export default function App() {
     <div style={appStyle}>
       {/* Header */}
       <header style={headerStyle}>
-        <h1 style={titleStyle}>✦ Jewelry Finder</h1>
+        <h1 style={titleStyle}>✨ Blingr</h1>
         <nav style={navStyle}>
           <button
             style={{ ...navBtnStyle, ...(tab === 'discover' ? activeNavStyle : {}) }}
